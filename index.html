@@ -89,8 +89,8 @@ li.checked .row label{color:var(--muted);text-decoration:line-through;text-decor
 h3{font-family:var(--serif);font-size:22px;margin:0 0 4px;font-weight:600}
 .hint{color:var(--muted);font-size:14px;margin:0 0 14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:22px}
-.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:30px}
-.out div{background:var(--surface);padding:14px}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:30px}
+.out div{background:var(--surface);padding:14px;box-shadow:0 0 0 .5px var(--line)}
 .out small{display:block;color:var(--muted);font-size:13px}
 .out strong{font-family:var(--serif);font-size:24px;font-weight:600}
 .alloc{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
@@ -104,6 +104,25 @@ h3{font-family:var(--serif);font-size:22px;margin:0 0 4px;font-weight:600}
 .total{display:flex;justify-content:space-between;padding:12px 14px;background:var(--soft);font-weight:600}
 .total.warn{color:var(--danger)}
 
+/* Disbursement */
+.basis{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px}
+.basis span{color:var(--muted);font-size:14px;font-weight:600;margin-right:4px}
+.basis button{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 12px;font-size:14px;cursor:pointer}
+.basis button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.out .warn strong,.out .warn small{color:var(--danger)}
+.out .good strong{color:var(--sage)}
+.meter{height:10px;background:var(--soft);border-radius:5px;overflow:hidden;margin:-18px 0 26px}
+.meter span{display:block;height:100%;background:var(--brass);transition:width .3s}
+.meter.over span{background:var(--danger)}
+.dline{display:grid;grid-template-columns:26px 1fr 130px;gap:10px;align-items:center}
+.dline input[type=checkbox]{appearance:none;-webkit-appearance:none;width:24px;height:24px;margin:0;border:2px solid var(--muted);border-radius:6px;cursor:pointer;display:grid;place-items:center;background:var(--surface)}
+.dline input[type=checkbox]:checked{background:var(--sage);border-color:var(--sage)}
+.dline input[type=checkbox]:checked::after{content:"";width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.dline input.amt-in{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);text-align:right;width:100%;font-size:16px;font-family:var(--serif);font-weight:600}
+.drow.paid input.lbl{color:var(--muted);text-decoration:line-through}
+.drow .sub{padding-left:36px}
+.share{font-size:13px;color:var(--muted)}
+.paid-tag{color:var(--sage);font-weight:600}
 /* Team */
 .cards{display:grid;gap:12px;margin-bottom:12px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
@@ -126,6 +145,7 @@ footer{color:var(--muted);font-size:13px;margin-top:24px}
   </header>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="check">Checklist</button>
+    <button role="tab" data-tab="plan">Disbursement</button>
     <button role="tab" data-tab="numbers">Numbers</button>
     <button role="tab" data-tab="team">Team</button>
   </nav>
@@ -152,6 +172,14 @@ const money = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD
 
 function phase(title, summary, items){
   return {id:uid(), title, summary, notes:'', open:false, items:items.map(t=>({id:uid(), text:t, done:false, notes:'', open:false}))};
+}
+function disbDefaults(){
+  return [
+    ['Interest Bearing Trust',4000000],['Tithe',700000],['Investment',500000],['House',250000],
+    ['HYS Account',200000],['Personal Missions',200000],['Marcus',200000],['Alex',200000],
+    ['Student loan',150000],['Treasury Bonds',140000],['Floyd & Kim',100000],['Flagstar CD',100000],
+    ['James Webb',90000],['Bills',90000],['Special Give away',57000],['Eric Galloway',50000],['Luxury Vacation',30000]
+  ].map(([label,amount])=>({id:uid(),label,amount,paid:false,notes:'',open:false}));
 }
 function defaults(){
   return {
@@ -219,7 +247,7 @@ function defaults(){
         'Revisit the family mission statement with heirs'
       ])
     ],
-    numbers:{gross:7000000, taxLump:37, monthly:4000, years:25, taxMonthly:25, now:3696, withdraw:3.5},
+    numbers:{gross:7000000, taxLump:0, monthly:4000, years:25, taxMonthly:25, now:3696, withdraw:3.5},
     alloc:[
       {id:uid(), label:'Giving', pct:10, notes:''},
       {id:uid(), label:'Debt payoff', pct:5, notes:''},
@@ -228,6 +256,8 @@ function defaults(){
       {id:uid(), label:'Family trusts and inheritance', pct:5, notes:''},
       {id:uid(), label:'Long-term portfolio', pct:70, notes:''}
     ],
+    disbBasis:'gross', disbCustom:0,
+    disburse: disbDefaults(),
     team:[
       {id:uid(), role:'Fee-only fiduciary planner', name:'', contact:'', notes:''},
       {id:uid(), role:'Estate-planning attorney', name:'', contact:'', notes:''},
@@ -240,6 +270,9 @@ function defaults(){
 
 let state;
 try { state = JSON.parse(localStorage.getItem(KEY)) || defaults(); } catch(e){ state = defaults(); }
+if(!state.disburse){ state.disburse = disbDefaults(); state.disbCustom=0; }
+if(state.disbBasis!=='custom') state.disbBasis='gross';
+state.numbers.taxLump = 0; // lump sum is already net of taxes
 
 let saveTimer, flashTimer;
 function save(){
@@ -273,6 +306,7 @@ function render(){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===state.tab));
   if(state.tab==='check') renderCheck();
   else if(state.tab==='numbers') renderNumbers();
+  else if(state.tab==='plan') renderPlan();
   else renderTeam();
   updateProgress();
 }
@@ -319,7 +353,7 @@ function renderCheck(){
 
 function calc(){
   const n = state.numbers;
-  const netLump = n.gross*(1-n.taxLump/100);
+  const netLump = +n.gross||0; // taxes already paid
   const netMonthly = n.monthly*(1-n.taxMonthly/100);
   return {netLump, netMonthly, stream:n.monthly*12*n.years, streamNet:netMonthly*12*n.years};
 }
@@ -331,8 +365,7 @@ function renderNumbers(){
     <h3>Your payouts</h3>
     <p class="hint">Adjust these as your CPA gives you firmer figures.</p>
     <div class="grid">
-      ${f('gross','Lump sum (before tax)')}
-      ${f('taxLump','Est. tax on lump sum (%)')}
+      ${f('gross','Lump sum (taxes already paid)')}
       ${f('monthly','Monthly payment')}
       ${f('years','Years of payments')}
       ${f('taxMonthly','Est. tax on monthly (%)')}
@@ -341,7 +374,7 @@ function renderNumbers(){
     </div>
     <div class="out" id="outs"></div>
     <h3>Allocation matrix</h3>
-    <p class="hint">Percentages of the after-tax lump sum. Tap a row's notes to record decisions.</p>
+    <p class="hint">Percentages of the lump sum. Tap a row's notes to record decisions.</p>
     <div class="alloc" id="alloc"></div>
     <div class="btnrow"><button class="btn" data-act="addAlloc">Add a category</button></div>`;
   renderOuts(); renderAlloc();
@@ -351,7 +384,7 @@ function renderOuts(){
   const port = state.alloc.find(a=>/portfolio/i.test(a.label));
   const portAmt = port ? c.netLump*port.pct/100 : 0;
   document.getElementById('outs').innerHTML = `
-    <div><small>After-tax lump sum</small><strong>${money(c.netLump)}</strong></div>
+    <div><small>Lump sum</small><strong>${money(c.netLump)}</strong></div>
     <div><small>After-tax monthly</small><strong>${money(c.netMonthly)}</strong></div>
     <div><small>Total monthly payments (${n.years} yrs)</small><strong>${money(c.stream)}</strong></div>
     <div><small>Portfolio income per year</small><strong>${money(portAmt*n.withdraw/100)}</strong></div>`;
@@ -387,6 +420,70 @@ function refreshAllocAmounts(){
     t.innerHTML=`<span>Total ${off?'(should equal 100%)':''}</span><span>${+total.toFixed(2)}%</span>`; }
 }
 
+const num = s => parseFloat(String(s).replace(/[^0-9.]/g,''))||0;
+const commas = n => (+n||0).toLocaleString('en-US',{maximumFractionDigits:2});
+function available(){
+  if(state.disbBasis==='custom') return +state.disbCustom||0;
+  return +state.numbers.gross||0;
+}
+function renderPlan(){
+  const b = state.disbBasis;
+  const pb = (k,l)=>`<button data-act="basis" data-basis="${k}" aria-pressed="${b===k}">${l}</button>`;
+  app.innerHTML = `
+    <h3>Disbursement plan</h3>
+    <p class="hint">Every amount is adjustable. Check a line off when the money has actually gone out.</p>
+    <div class="basis"><span>Compare against</span>${pb('gross','$7M lump sum')}${pb('custom','Custom amount')}</div>
+    ${b==='custom'?`<label class="field" style="margin-bottom:14px">Custom amount available<input inputmode="decimal" data-dcustom value="${commas(state.disbCustom)}"></label>`:''}
+    <div class="out" id="dsum"></div>
+    <div class="meter" id="dmeter"><span></span></div>
+    <div class="alloc" id="dlist"></div>
+    <div class="btnrow"><button class="btn" data-act="addDisb">Add a line</button></div>`;
+  renderDList(); refreshDisb();
+}
+function renderDList(){
+  state.disburse.sort((a,b)=>(+b.amount||0)-(+a.amount||0));
+  document.getElementById('dlist').innerHTML = state.disburse.map(d=>`
+    <div class="arow drow ${d.paid?'paid':''}" data-disb="${d.id}">
+      <div class="dline">
+        <input type="checkbox" data-act="paid" ${d.paid?'checked':''} aria-label="Mark ${esc(d.label)} as paid">
+        <input class="lbl" data-dfield="label" value="${esc(d.label)}" aria-label="Line name">
+        <input class="amt-in" inputmode="decimal" data-dfield="amount" value="${commas(d.amount)}" aria-label="Amount">
+      </div>
+      <div class="sub">
+        <span class="share"></span>
+        <button class="more" data-act="toggleDisb" aria-expanded="${!!d.open}">${d.open?'Close':(d.notes?'Notes':'Notes')}</button>
+      </div>
+      ${(!d.open && d.notes)?`<span class="note-peek" style="padding-left:36px">Note: ${esc(d.notes.length>60?d.notes.slice(0,60)+'\u2026':d.notes)}</span>`:''}
+      ${d.open?`<div style="display:grid;gap:8px;margin-top:10px;padding-left:36px">
+        <label class="field">Notes<textarea data-dfield="notes" placeholder="Account, date paid, who it's with\u2026">${esc(d.notes)}</textarea></label>
+        <div class="btnrow"><button class="btn danger" data-act="delDisb">Delete line</button></div></div>`:''}
+    </div>`).join('') + `<div class="total" id="dtotal"></div>`;
+}
+function refreshDisb(){
+  const avail = available();
+  const planned = state.disburse.reduce((s,d)=>s+(+d.amount||0),0);
+  const paid = state.disburse.filter(d=>d.paid).reduce((s,d)=>s+(+d.amount||0),0);
+  const left = avail - planned;
+  const over = left < 0;
+  const sum = document.getElementById('dsum'); if(!sum) return;
+  sum.innerHTML = `
+    <div><small>Available</small><strong>${money(avail)}</strong></div>
+    <div><small>Total planned</small><strong>${money(planned)}</strong></div>
+    <div class="${over?'warn':'good'}"><small>${over?'Over by':'Left to assign'}</small><strong>${money(Math.abs(left))}</strong></div>
+    <div><small>Paid out so far</small><strong>${money(paid)}</strong></div>
+    <div><small>Still to pay</small><strong>${money(planned-paid)}</strong></div>`;
+  const m = document.getElementById('dmeter');
+  m.classList.toggle('over', over);
+  m.firstElementChild.style.width = (avail? Math.min(planned/avail*100,100):0)+'%';
+  state.disburse.forEach(d=>{
+    const row = app.querySelector(`[data-disb="${d.id}"]`); if(!row) return;
+    row.querySelector('.share').innerHTML = `Rank ${state.disburse.indexOf(d)+1} | ${planned?((+d.amount||0)/planned*100).toFixed(1):'0.0'}% of plan${d.paid?' &nbsp;<span class="paid-tag">Paid</span>':''}`;
+  });
+  const t = document.getElementById('dtotal');
+  t.classList.toggle('warn', over);
+  t.innerHTML = `<span>Total (${state.disburse.length} lines)</span><span>${money(planned)}</span>`;
+}
+
 function renderTeam(){
   app.innerHTML = `
     <h3>Your advisory team</h3>
@@ -413,12 +510,13 @@ document.querySelector('nav.tabs').addEventListener('click', e=>{
 const findPhase = el => state.phases.find(p=>p.id===el.closest('.phase')?.dataset.id);
 const findItem = (p,el) => p?.items.find(i=>i.id===el.closest('[data-item]')?.dataset.item);
 const findAlloc = el => state.alloc.find(a=>a.id===el.closest('[data-alloc]')?.dataset.alloc);
+const findDisb = el => state.disburse.find(d=>d.id===el.closest('[data-disb]')?.dataset.disb);
 const findMember = el => state.team.find(m=>m.id===el.closest('[data-member]')?.dataset.member);
 
 app.addEventListener('click', e=>{
   const t = e.target.closest('[data-act]'); if(!t) return;
   const act = t.dataset.act;
-  if(act==='check') return; // handled on change
+  if(act==='check' || act==='paid') return; // handled on change
   const p = findPhase(t);
   switch(act){
     case 'togglePhase': p.open=!p.open; break;
@@ -431,6 +529,11 @@ app.addEventListener('click', e=>{
     case 'toggleAlloc': { const a=findAlloc(t); a.open=!a.open; save(); renderAlloc(); return; }
     case 'delAlloc': { if(!confirm('Delete this category?')) return; const a=findAlloc(t); state.alloc=state.alloc.filter(x=>x!==a); save(); renderAlloc(); renderOuts(); return; }
     case 'addAlloc': state.alloc.push({id:uid(),label:'New category',pct:0,notes:'',open:true}); save(); renderAlloc(); return;
+    case 'basis': state.disbBasis=t.dataset.basis; save(); renderPlan(); return;
+    case 'toggleDisb': { const d=findDisb(t); d.open=!d.open; save(); renderDList(); refreshDisb(); return; }
+    case 'delDisb': { if(!confirm('Delete this line?')) return; const d=findDisb(t); state.disburse=state.disburse.filter(x=>x!==d); save(); renderDList(); refreshDisb(); return; }
+    case 'addDisb': state.disburse.push({id:uid(),label:'New line',amount:0,paid:false,notes:'',open:true}); save(); renderDList(); refreshDisb();
+      { const last=app.querySelector('#dlist .drow:last-of-type input.lbl'); if(last){ last.focus(); last.select(); } } return;
     case 'delMember': { if(!confirm('Remove this team member?')) return; const m=findMember(t); state.team=state.team.filter(x=>x!==m); break; }
     case 'addMember': state.team.push({id:uid(),role:'New role',name:'',contact:'',notes:''}); break;
   }
@@ -449,6 +552,9 @@ app.addEventListener('change', e=>{
     t.closest('li').classList.toggle('checked', it.done);
     save(); updateProgress();
   }
+  if(t.dataset.act==='paid'){ const d=findDisb(t); d.paid=t.checked; t.closest('.drow').classList.toggle('paid',d.paid); save(); refreshDisb(); return; }
+  if(t.dataset.dfield==='amount'){ renderDList(); refreshDisb(); save(); return; }
+  if(t.hasAttribute('data-dcustom')){ t.value = commas(state.disbCustom); }
   if(t.dataset.field==='text' || t.dataset.pfield==='title' || t.dataset.pfield==='summary'){ render(); }
 });
 
@@ -459,6 +565,9 @@ app.addEventListener('input', e=>{
   if(t.dataset.num){ state.numbers[t.dataset.num]=parseFloat(t.value)||0; save(); renderOuts(); refreshAllocAmounts(); return; }
   if(t.dataset.afield){ const a=findAlloc(t); a[t.dataset.afield] = t.dataset.afield==='pct' ? (parseFloat(t.value)||0) : t.value; save();
     if(t.dataset.afield!=='notes'){ refreshAllocAmounts(); renderOuts(); } return; }
+  if(t.dataset.dfield){ const d=findDisb(t); d[t.dataset.dfield] = t.dataset.dfield==='amount' ? num(t.value) : t.value; save();
+    if(t.dataset.dfield==='amount') refreshDisb(); return; }
+  if(t.hasAttribute('data-dcustom')){ state.disbCustom = num(t.value); save(); refreshDisb(); return; }
   if(t.dataset.tfield){ const m=findMember(t); m[t.dataset.tfield]=t.value; save(); return; }
 });
 
