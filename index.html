@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liquidity Plan</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Liquidity Plan">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1EF; --surface:#FFFFFF; --ink:#1D2B36; --muted:#5B6873;
+  --brass:#9C7A34; --sage:#4F7A62; --line:#CDD5D2; --danger:#A14335; --soft:#E3E8E6;
+  --serif:"Spectral", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131A1F; --surface:#1C252C; --ink:#E6ECEA; --muted:#9AA8A4;
+    --brass:#D0AE66; --sage:#7FB394; --line:#2E3A42; --danger:#E08273; --soft:#24303A;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:20px 18px 64px}
+header.top{padding:18px 0 10px}
+header.top h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,7vw,42px);line-height:1.1;margin:0;letter-spacing:-.01em}
+header.top .who{color:var(--muted);margin:6px 0 0;font-size:15px}
+.overall{margin:18px 0 6px;display:flex;align-items:center;gap:14px}
+.bar{flex:1;height:8px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--sage);transition:width .3s}
+.overall b{font-family:var(--serif);font-size:20px;min-width:4ch;text-align:right}
+nav.tabs{display:flex;gap:6px;margin:18px 0 22px;border-bottom:1px solid var(--line)}
+nav.tabs button{font:inherit;font-weight:600;background:none;border:0;color:var(--muted);padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;margin-bottom:-1px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+/* Timeline */
+.timeline{position:relative;padding-left:46px}
+.timeline::before{content:"";position:absolute;left:17px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.phase{position:relative;margin-bottom:22px}
+.marker{position:absolute;left:-46px;top:2px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--serif);font-weight:700;background:var(--bg);border:2px solid var(--brass);color:var(--brass)}
+.phase.done .marker{background:var(--sage);border-color:var(--sage);color:#fff}
+.phase-head{width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;display:block}
+.phase-head h2{font-family:var(--serif);font-size:23px;line-height:1.2;margin:4px 0 2px;font-weight:600}
+.phase-head .sum{color:var(--muted);margin:0;font-size:15px}
+.phase-head .count{display:inline-block;margin-top:6px;font-size:14px;color:var(--muted)}
+.phase-head .count .mini{display:inline-block;vertical-align:middle;width:70px;height:4px;background:var(--soft);border-radius:2px;margin-left:8px;overflow:hidden}
+.phase-head .count .mini i{display:block;height:100%;background:var(--sage)}
+.panel{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.items{list-style:none;margin:0;padding:0}
+.items li{border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:flex-start;gap:12px;padding:12px 12px 12px 14px}
+.row input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:24px;height:24px;margin:1px 0 0;border:2px solid var(--muted);border-radius:6px;cursor:pointer;display:grid;place-items:center;background:var(--surface)}
+.row input[type=checkbox]:checked{background:var(--sage);border-color:var(--sage)}
+.row input[type=checkbox]:checked::after{content:"";width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.row label{flex:1;cursor:pointer}
+li.checked .row label{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.note-peek{display:block;font-size:14px;color:var(--brass);margin-top:3px;text-decoration:none}
+.more{flex:none;background:none;border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:13px;color:var(--muted);cursor:pointer}
+.more[aria-expanded="true"]{border-color:var(--brass);color:var(--brass)}
+.detail{padding:0 14px 14px 50px;display:grid;gap:10px}
+.field{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.field input,.field textarea,.add input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:var(--bg);font-weight:400;font-size:16px;color:var(--ink)}
+.field textarea{min-height:84px;resize:vertical;line-height:1.45}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:14px}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--danger);border-color:transparent;background:none;padding-left:0}
+.add{display:flex;gap:8px;padding:12px 14px;background:var(--soft)}
+.phase-tools{padding:12px 14px;border-top:1px solid var(--line)}
+.phase-tools summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px}
+.phase-tools .inner{display:grid;gap:10px;margin-top:12px}
+.add-phase{margin-left:46px}
+
+/* Numbers */
+h3{font-family:var(--serif);font-size:22px;margin:0 0 4px;font-weight:600}
+.hint{color:var(--muted);font-size:14px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:22px}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:30px}
+.out div{background:var(--surface);padding:14px}
+.out small{display:block;color:var(--muted);font-size:13px}
+.out strong{font-family:var(--serif);font-size:24px;font-weight:600}
+.alloc{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.arow{border-bottom:1px solid var(--line);padding:12px 14px}
+.arow .top-line{display:grid;grid-template-columns:1fr 78px auto;gap:10px;align-items:center}
+.arow input.lbl{border:0;background:none;font-weight:600;font-size:16px;padding:4px 0;width:100%}
+.arow input.pct{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);text-align:right;width:100%;font-size:16px}
+.arow .amt{font-family:var(--serif);font-weight:600;min-width:9ch;text-align:right}
+.arow .sub{display:flex;justify-content:space-between;align-items:center;margin-top:4px;gap:10px}
+.arow .sub .note-peek{margin:0}
+.total{display:flex;justify-content:space-between;padding:12px 14px;background:var(--soft);font-weight:600}
+.total.warn{color:var(--danger)}
+
+/* Team */
+.cards{display:grid;gap:12px;margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
+.card .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.card .two{grid-template-columns:1fr}}
+
+.tools{margin-top:40px;padding-top:20px;border-top:1px solid var(--line)}
+.saved{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:6px 12px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+.saved.show{opacity:.9}
+footer{color:var(--muted);font-size:13px;margin-top:24px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Liquidity Event Plan</h1>
+    <p class="who">Dr. Floyd E. Dorsey Jr. &nbsp;|&nbsp; Steward's checklist</p>
+    <div class="overall"><div class="bar"><span id="obar"></span></div><b id="opct">0%</b></div>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="check">Checklist</button>
+    <button role="tab" data-tab="numbers">Numbers</button>
+    <button role="tab" data-tab="team">Team</button>
+  </nav>
+  <main id="app"></main>
+  <section class="tools">
+    <h3>Backup</h3>
+    <p class="hint">Your plan saves on this device automatically. Export a backup now and then, especially before switching devices.</p>
+    <div class="btnrow">
+      <button class="btn" id="exportBtn">Export backup</button>
+      <button class="btn" id="importBtn">Import backup</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+      <button class="btn danger" id="resetBtn">Reset to starting plan</button>
+    </div>
+  </section>
+  <footer>A planning checklist, not legal, tax, or financial advice. Confirm every decision with your planner, attorney, and CPA.</footer>
+</div>
+<div class="saved" id="saved">Saved</div>
+
+<script>
+const KEY = 'liquidityPlan.v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(isFinite(n)?n:0);
+
+function phase(title, summary, items){
+  return {id:uid(), title, summary, notes:'', open:false, items:items.map(t=>({id:uid(), text:t, done:false, notes:'', open:false}))};
+}
+function defaults(){
+  return {
+    tab:'check',
+    phases:[
+      phase('The first 90 days','Protect before you plan.',[
+        'Agree with family on who knows and what to say',
+        'If a lottery prize, prepare the family for public disclosure of your name',
+        'Secure original documents (ticket, award letter, contracts) in a safe deposit box',
+        'Interview at least two fee-only fiduciary financial planners',
+        'Interview at least two estate-planning attorneys',
+        'Interview at least two CPAs experienced with large windfalls',
+        'Decide payout option and claim timing with your CPA before claiming',
+        'Park funds in T-bills or a money market, or split across banks under FDIC limits',
+        'Commit in writing: no major purchases, gifts, or loans for six months',
+        'Tighten social media privacy and consider a new phone number'
+      ]),
+      phase('Know your real number','Taxes first, then the true figure.',[
+        'Get your CPA\u2019s estimate of federal tax on the lump sum',
+        'Confirm state tax treatment for this type of income',
+        'Set aside tax not covered by withholding; schedule estimated payments',
+        'Calculate after-tax monthly income from the 25-year payments',
+        'List current monthly expenses and all other income'
+      ]),
+      phase('The allocation matrix','Give every dollar a job.',[
+        'Review the Numbers tab allocation with your planner',
+        'Fund giving first, in the year you receive the money',
+        'Pay off consumer debt and the car',
+        'Decide whether to pay off the house',
+        'Fund a two-year cash reserve',
+        'Set a written annual lifestyle cap (your \u201csalary\u201d)',
+        'Invest the long-term portfolio in diversified, low-cost funds',
+        'Set a sustainable withdrawal rate (3\u20134%)'
+      ]),
+      phase('Asset protection','Guard what you\u2019ve been given.',[
+        'Create a revocable living trust and retitle assets into it',
+        'Update beneficiaries on every account and policy',
+        'Buy umbrella liability insurance ($3\u20135M)',
+        'Form an LLC for any rental or investment property',
+        'Sign a durable power of attorney and healthcare directive',
+        'Review home and auto insurance limits',
+        'Adopt the policy: all requests go through my advisor'
+      ]),
+      phase('An inheritance that lasts','Values travel with the money.',[
+        'Write a family mission statement',
+        'Decide a staggered distribution schedule (for example 25, 30, 35)',
+        'Define milestone provisions (education, work, service)',
+        'Name a trustee or co-trustee and a successor',
+        'Discuss a dynasty trust with your attorney',
+        'Hold the first family meeting',
+        'Plan how you\u2019ll teach stewardship to heirs'
+      ]),
+      phase('Charity with structure','Generosity that outlives you.',[
+        'Set a giving goal (percentage or amount)',
+        'Open and fund a donor-advised fund in the year of receipt',
+        'Ask about a charitable remainder trust',
+        'Evaluate whether a private foundation makes sense',
+        'List the ministries and causes to support',
+        'Confirm the 2026 charitable deduction rules with your CPA'
+      ]),
+      phase('Ongoing stewardship','Review it every year.',[
+        'Schedule an annual review with your whole team',
+        'Rebalance the portfolio each year',
+        'Update estate documents after any major life change',
+        'Revisit the family mission statement with heirs'
+      ])
+    ],
+    numbers:{gross:7000000, taxLump:37, monthly:4000, years:25, taxMonthly:25, now:3696, withdraw:3.5},
+    alloc:[
+      {id:uid(), label:'Giving', pct:10, notes:''},
+      {id:uid(), label:'Debt payoff', pct:5, notes:''},
+      {id:uid(), label:'Cash reserve (2 years)', pct:5, notes:''},
+      {id:uid(), label:'One-time lifestyle', pct:5, notes:''},
+      {id:uid(), label:'Family trusts and inheritance', pct:5, notes:''},
+      {id:uid(), label:'Long-term portfolio', pct:70, notes:''}
+    ],
+    team:[
+      {id:uid(), role:'Fee-only fiduciary planner', name:'', contact:'', notes:''},
+      {id:uid(), role:'Estate-planning attorney', name:'', contact:'', notes:''},
+      {id:uid(), role:'CPA', name:'', contact:'', notes:''},
+      {id:uid(), role:'Trustee / co-trustee', name:'', contact:'', notes:''},
+      {id:uid(), role:'Insurance agent', name:'', contact:'', notes:''}
+    ]
+  };
+}
+
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || defaults(); } catch(e){ state = defaults(); }
+
+let saveTimer, flashTimer;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+    const s = document.getElementById('saved');
+    s.classList.add('show'); clearTimeout(flashTimer);
+    flashTimer = setTimeout(()=>s.classList.remove('show'), 900);
+  }, 250);
+}
+
+const app = document.getElementById('app');
+
+function updateProgress(){
+  let total=0, done=0;
+  state.phases.forEach(p=>{ total+=p.items.length; done+=p.items.filter(i=>i.done).length; });
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('obar').style.width = pct+'%';
+  document.getElementById('opct').textContent = pct+'%';
+  state.phases.forEach(p=>{
+    const el = app.querySelector(`.phase[data-id="${p.id}"]`); if(!el) return;
+    const d = p.items.filter(i=>i.done).length, t = p.items.length;
+    el.classList.toggle('done', t>0 && d===t);
+    const c = el.querySelector('.count'); if(c) c.innerHTML = countHTML(d,t);
+  });
+}
+const countHTML = (d,t) => `${d} of ${t} done<span class="mini"><i style="width:${t?d/t*100:0}%"></i></span>`;
+
+function render(){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===state.tab));
+  if(state.tab==='check') renderCheck();
+  else if(state.tab==='numbers') renderNumbers();
+  else renderTeam();
+  updateProgress();
+}
+
+function renderCheck(){
+  app.innerHTML = `<div class="timeline">${state.phases.map((p,idx)=>{
+    const d=p.items.filter(i=>i.done).length, t=p.items.length;
+    return `<article class="phase" data-id="${p.id}">
+      <div class="marker">${idx+1}</div>
+      <button class="phase-head" data-act="togglePhase" aria-expanded="${p.open}">
+        <h2>${esc(p.title)}</h2>
+        ${p.summary?`<p class="sum">${esc(p.summary)}</p>`:''}
+        <span class="count">${countHTML(d,t)}</span>
+      </button>
+      ${p.open?`<div class="panel">
+        <ul class="items">${p.items.map(it=>`
+          <li class="${it.done?'checked':''}" data-item="${it.id}">
+            <div class="row">
+              <input type="checkbox" id="c-${it.id}" ${it.done?'checked':''} data-act="check">
+              <label for="c-${it.id}">${esc(it.text)}${(!it.open && it.notes)?`<span class="note-peek">Note: ${esc(it.notes.length>70?it.notes.slice(0,70)+'\u2026':it.notes)}</span>`:''}</label>
+              <button class="more" data-act="toggleItem" aria-expanded="${it.open}">${it.open?'Close':(it.notes?'Notes':'Edit')}</button>
+            </div>
+            ${it.open?`<div class="detail">
+              <label class="field">Item<input data-field="text" value="${esc(it.text)}"></label>
+              <label class="field">Notes<textarea data-field="notes" placeholder="Names, dates, amounts, decisions\u2026">${esc(it.notes)}</textarea></label>
+              <div class="btnrow"><button class="btn danger" data-act="delItem">Delete item</button></div>
+            </div>`:''}
+          </li>`).join('')}
+        </ul>
+        <div class="add"><input placeholder="Add an item" data-addfor="${p.id}" aria-label="Add an item"><button class="btn primary" data-act="addItem">Add</button></div>
+        <details class="phase-tools" ${p.notes?'open':''}>
+          <summary>Section notes and settings</summary>
+          <div class="inner">
+            <label class="field">Section notes<textarea data-pfield="notes" placeholder="Thoughts for this whole phase">${esc(p.notes)}</textarea></label>
+            <label class="field">Section name<input data-pfield="title" value="${esc(p.title)}"></label>
+            <label class="field">Subtitle<input data-pfield="summary" value="${esc(p.summary)}"></label>
+            <div class="btnrow"><button class="btn danger" data-act="delPhase">Delete section</button></div>
+          </div>
+        </details>
+      </div>`:''}
+    </article>`;}).join('')}</div>
+    <div class="add-phase"><button class="btn" data-act="addPhase">Add a section</button></div>`;
+}
+
+function calc(){
+  const n = state.numbers;
+  const netLump = n.gross*(1-n.taxLump/100);
+  const netMonthly = n.monthly*(1-n.taxMonthly/100);
+  return {netLump, netMonthly, stream:n.monthly*12*n.years, streamNet:netMonthly*12*n.years};
+}
+
+function renderNumbers(){
+  const n = state.numbers;
+  const f = (k,label,step='any') => `<label class="field">${label}<input type="number" inputmode="decimal" step="${step}" data-num="${k}" value="${n[k]}"></label>`;
+  app.innerHTML = `
+    <h3>Your payouts</h3>
+    <p class="hint">Adjust these as your CPA gives you firmer figures.</p>
+    <div class="grid">
+      ${f('gross','Lump sum (before tax)')}
+      ${f('taxLump','Est. tax on lump sum (%)')}
+      ${f('monthly','Monthly payment')}
+      ${f('years','Years of payments')}
+      ${f('taxMonthly','Est. tax on monthly (%)')}
+      ${f('now','Immediate payment')}
+      ${f('withdraw','Portfolio withdrawal rate (%)')}
+    </div>
+    <div class="out" id="outs"></div>
+    <h3>Allocation matrix</h3>
+    <p class="hint">Percentages of the after-tax lump sum. Tap a row's notes to record decisions.</p>
+    <div class="alloc" id="alloc"></div>
+    <div class="btnrow"><button class="btn" data-act="addAlloc">Add a category</button></div>`;
+  renderOuts(); renderAlloc();
+}
+function renderOuts(){
+  const c = calc(), n = state.numbers;
+  const port = state.alloc.find(a=>/portfolio/i.test(a.label));
+  const portAmt = port ? c.netLump*port.pct/100 : 0;
+  document.getElementById('outs').innerHTML = `
+    <div><small>After-tax lump sum</small><strong>${money(c.netLump)}</strong></div>
+    <div><small>After-tax monthly</small><strong>${money(c.netMonthly)}</strong></div>
+    <div><small>Total monthly payments (${n.years} yrs)</small><strong>${money(c.stream)}</strong></div>
+    <div><small>Portfolio income per year</small><strong>${money(portAmt*n.withdraw/100)}</strong></div>`;
+}
+function renderAlloc(){
+  const c = calc();
+  const total = state.alloc.reduce((s,a)=>s+(+a.pct||0),0);
+  document.getElementById('alloc').innerHTML = state.alloc.map(a=>`
+    <div class="arow" data-alloc="${a.id}">
+      <div class="top-line">
+        <input class="lbl" data-afield="label" value="${esc(a.label)}" aria-label="Category name">
+        <input class="pct" type="number" inputmode="decimal" step="any" data-afield="pct" value="${a.pct}" aria-label="Percent">
+        <span class="amt">${money(c.netLump*(+a.pct||0)/100)}</span>
+      </div>
+      <div class="sub">
+        ${a.open?'':(a.notes?`<span class="note-peek">Note: ${esc(a.notes.length>60?a.notes.slice(0,60)+'\u2026':a.notes)}</span>`:'<span></span>')}
+        <button class="more" data-act="toggleAlloc" aria-expanded="${!!a.open}">${a.open?'Close':'Notes'}</button>
+      </div>
+      ${a.open?`<div style="display:grid;gap:8px;margin-top:10px">
+        <label class="field">Notes<textarea data-afield="notes">${esc(a.notes)}</textarea></label>
+        <div class="btnrow"><button class="btn danger" data-act="delAlloc">Delete category</button></div></div>`:''}
+    </div>`).join('') + `<div class="total ${Math.abs(total-100)>0.01?'warn':''}"><span>Total ${Math.abs(total-100)>0.01?'(should equal 100%)':''}</span><span>${+total.toFixed(2)}%</span></div>`;
+}
+function refreshAllocAmounts(){
+  const c = calc();
+  state.alloc.forEach(a=>{
+    const el = app.querySelector(`[data-alloc="${a.id}"] .amt`);
+    if(el) el.textContent = money(c.netLump*(+a.pct||0)/100);
+  });
+  const total = state.alloc.reduce((s,a)=>s+(+a.pct||0),0);
+  const t = app.querySelector('.total');
+  if(t){ const off=Math.abs(total-100)>0.01; t.classList.toggle('warn',off);
+    t.innerHTML=`<span>Total ${off?'(should equal 100%)':''}</span><span>${+total.toFixed(2)}%</span>`; }
+}
+
+function renderTeam(){
+  app.innerHTML = `
+    <h3>Your advisory team</h3>
+    <p class="hint">Keep names, contact details, and interview notes in one place.</p>
+    <div class="cards">${state.team.map(m=>`
+      <div class="card" data-member="${m.id}">
+        <label class="field">Role<input data-tfield="role" value="${esc(m.role)}"></label>
+        <div class="two">
+          <label class="field">Name<input data-tfield="name" value="${esc(m.name)}"></label>
+          <label class="field">Phone or email<input data-tfield="contact" value="${esc(m.contact)}"></label>
+        </div>
+        <label class="field">Notes<textarea data-tfield="notes" placeholder="Fees, credentials, impressions\u2026">${esc(m.notes)}</textarea></label>
+        <div class="btnrow"><button class="btn danger" data-act="delMember">Remove</button></div>
+      </div>`).join('')}</div>
+    <div class="btnrow"><button class="btn" data-act="addMember">Add a team member</button></div>`;
+}
+
+/* Events */
+document.querySelector('nav.tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-tab]'); if(!b) return;
+  state.tab = b.dataset.tab; save(); render();
+});
+
+const findPhase = el => state.phases.find(p=>p.id===el.closest('.phase')?.dataset.id);
+const findItem = (p,el) => p?.items.find(i=>i.id===el.closest('[data-item]')?.dataset.item);
+const findAlloc = el => state.alloc.find(a=>a.id===el.closest('[data-alloc]')?.dataset.alloc);
+const findMember = el => state.team.find(m=>m.id===el.closest('[data-member]')?.dataset.member);
+
+app.addEventListener('click', e=>{
+  const t = e.target.closest('[data-act]'); if(!t) return;
+  const act = t.dataset.act;
+  if(act==='check') return; // handled on change
+  const p = findPhase(t);
+  switch(act){
+    case 'togglePhase': p.open=!p.open; break;
+    case 'toggleItem': { const it=findItem(p,t); it.open=!it.open; break; }
+    case 'delItem': { if(!confirm('Delete this item?')) return; const it=findItem(p,t); p.items=p.items.filter(i=>i!==it); break; }
+    case 'addItem': { const inp=t.parentElement.querySelector('input'); const v=inp.value.trim(); if(!v){inp.focus();return;}
+      p.items.push({id:uid(),text:v,done:false,notes:'',open:false}); break; }
+    case 'delPhase': if(!confirm('Delete this whole section and its items?')) return; state.phases=state.phases.filter(x=>x!==p); break;
+    case 'addPhase': state.phases.push({id:uid(),title:'New section',summary:'',notes:'',open:true,items:[]}); break;
+    case 'toggleAlloc': { const a=findAlloc(t); a.open=!a.open; save(); renderAlloc(); return; }
+    case 'delAlloc': { if(!confirm('Delete this category?')) return; const a=findAlloc(t); state.alloc=state.alloc.filter(x=>x!==a); save(); renderAlloc(); renderOuts(); return; }
+    case 'addAlloc': state.alloc.push({id:uid(),label:'New category',pct:0,notes:'',open:true}); save(); renderAlloc(); return;
+    case 'delMember': { if(!confirm('Remove this team member?')) return; const m=findMember(t); state.team=state.team.filter(x=>x!==m); break; }
+    case 'addMember': state.team.push({id:uid(),role:'New role',name:'',contact:'',notes:''}); break;
+  }
+  save(); render();
+  if(act==='addItem'){ const inp=app.querySelector(`[data-addfor="${p.id}"]`); if(inp) inp.focus(); }
+});
+
+app.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.matches('[data-addfor]')){ e.preventDefault(); e.target.nextElementSibling.click(); }
+});
+
+app.addEventListener('change', e=>{
+  const t = e.target;
+  if(t.dataset.act==='check'){
+    const p=findPhase(t), it=findItem(p,t); it.done=t.checked;
+    t.closest('li').classList.toggle('checked', it.done);
+    save(); updateProgress();
+  }
+  if(t.dataset.field==='text' || t.dataset.pfield==='title' || t.dataset.pfield==='summary'){ render(); }
+});
+
+app.addEventListener('input', e=>{
+  const t = e.target;
+  if(t.dataset.field){ const p=findPhase(t), it=findItem(p,t); it[t.dataset.field]=t.value; save(); return; }
+  if(t.dataset.pfield){ const p=findPhase(t); p[t.dataset.pfield]=t.value; save(); return; }
+  if(t.dataset.num){ state.numbers[t.dataset.num]=parseFloat(t.value)||0; save(); renderOuts(); refreshAllocAmounts(); return; }
+  if(t.dataset.afield){ const a=findAlloc(t); a[t.dataset.afield] = t.dataset.afield==='pct' ? (parseFloat(t.value)||0) : t.value; save();
+    if(t.dataset.afield!=='notes'){ refreshAllocAmounts(); renderOuts(); } return; }
+  if(t.dataset.tfield){ const m=findMember(t); m[t.dataset.tfield]=t.value; save(); return; }
+});
+
+/* Backup */
+document.getElementById('exportBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'liquidity-plan-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+};
+document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try { const d = JSON.parse(r.result);
+      if(!d.phases || !d.numbers) throw new Error();
+      if(!confirm('Replace your current plan with this backup?')) return;
+      state = d; save(); render();
+    } catch(err){ alert('That file isn\u2019t a Liquidity Plan backup. Choose a .json file exported from this app.'); }
+    e.target.value='';
+  };
+  r.readAsText(file);
+};
+document.getElementById('resetBtn').onclick = ()=>{
+  if(!confirm('Reset to the starting plan? All checks, notes, and edits will be erased. Export a backup first if you want to keep them.')) return;
+  state = defaults(); save(); render();
+};
+
+render();
+</script>
+</body>
+</html>
